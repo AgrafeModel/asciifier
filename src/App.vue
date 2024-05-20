@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-
+import ASCIIViewer from "./components/ASCIIViewer.vue";
 
 const asciiArray = [
   " ",
@@ -31,7 +31,6 @@ const img = new Image();
 
 const previewPre = ref<HTMLPreElement | null>(null);
 const previewFontSize = ref<number>(16);
-
 
 const onFileChange = (e: Event) => {
   const target = e.target as HTMLInputElement;
@@ -84,26 +83,21 @@ function UpdateWidth(width: number) {
   RenderToASCII();
 }
 
-function ToClipboard() {
-  navigator.clipboard.writeText(ascii.value);
-}
+
 
 function UpdatePreviewFontSize(size: number) {
   if (previewPre.value) {
     previewPre.value.style.fontSize = `${size}px`;
   }
 }
-
 </script>
 
 <template>
   <div class="h-screen flex flex-col items-center justify-start p-8">
     <div class="bg-zinc-800 p-4 rounded-lg mb-2">
-
       <h1
         class="font-extrabold text-transparent text-4xl bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600"
       >
-      
         Image to ASCII
       </h1>
     </div>
@@ -111,14 +105,6 @@ function UpdatePreviewFontSize(size: number) {
       class="flex flex-col items-center space-y-4 bg-zinc-800 p-4 rounded-lg"
     >
       <input type="file" @change="onFileChange" class="p-2 rounded-lg" />
-      <input
-        type="range"
-        min="25"
-        max="200"
-        v-model="asciiWidth"
-        @change="UpdateWidth(asciiWidth)"
-        class="w-64"
-      />
     </div>
     <div
       class="flex flex-row w-full justify-center items-center space-x-4 mt-4"
@@ -128,18 +114,38 @@ function UpdatePreviewFontSize(size: number) {
       >
         <img :src="img.src" alt="Image" class="rounded-lg w-auto h-full" />
       </div>
-      <div
-        class="w-1/2 bg-zinc-800 p-4 rounded-lg overflow-auto h-[700px] relative flex flex-col justify-between"
-      >
-        <div class="rounded-lg overflow-auto h-[700px">
-          <pre class="text-white" ref="previewPre"
-          >{{ ascii }}</pre>
-        </div>
-        <div class="flex flex-row justify-end">
-          <input type="number" v-model="previewFontSize" @change="UpdatePreviewFontSize(previewFontSize)" class="p-2 rounded-lg" />
-          <button class="bg-zinc-600 p-2 rounded-lg text-white" @click="ToClipboard">
-          </button>  
-        </div>
+      <ASCIIViewer :asciiPreview="ascii" />
+    </div>
+    <div class="flex flex-col items-center justify-center">
+      <div class="flex flex-row items-center space-x-4 mt-4 w-full">
+        <label for="width" class="text-white text-center w-1/2">
+          Width: {{ asciiWidth }}
+        </label>
+        <input
+          type="range"
+          id="width"
+          min="50"
+          max="200"
+          step="1"
+          v-model="asciiWidth"
+          @input="UpdateWidth(asciiWidth)"
+          class="w-1/2"
+        />
+      </div>
+      <div class="flex flex-row items-center space-x-4 mt-4 w-full">
+        <label for="fontSize" class="text-white text-center w-1/2"
+          >Font Size: {{ previewFontSize }} px</label
+        >
+        <input
+          type="range"
+          id="fontSize"
+          min="8"
+          max="32"
+          step="1"
+          v-model="previewFontSize"
+          @input="UpdatePreviewFontSize(previewFontSize)"
+          class="w-1/2"
+        />
       </div>
     </div>
   </div>
