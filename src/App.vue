@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { onUnmounted } from "vue";
+import { createApp } from "vue";
+import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import { faCopy } from "@fortawesome/free-solid-svg-icons";
+import Toasts from "./components/Toasts.vue";
 import ASCIIViewer from "./components/ASCIIViewer.vue";
+import ImageInput from "./components/ImageInput.vue";
 
 const asciiArray = [
   " ",
@@ -21,15 +27,34 @@ const asciiArray = [
   "@",
 ];
 
+
+let toastApp: ReturnType<typeof createApp> | null = null;
+
+function ToClipboard() {
+  navigator.clipboard.writeText(ascii.value);
+  const toastContainer = document.createElement("div");
+  document.body.appendChild(toastContainer);
+  toastApp = createApp(Toasts, {
+    toast: { message: "ASCII copied to clipboard!", type: "success" },
+  });
+  toastApp.mount(toastContainer);
+}
+
+onUnmounted(() => {
+  if (toastApp) {
+    toastApp.unmount();
+  }
+});
+
 const file = ref<File | null>(null);
 const ascii = ref<string>("");
 const asciiWidth = ref<number>(100);
 const canvas = document.createElement("canvas");
 const ctx = canvas.getContext("2d");
+const negative = ref<boolean>(false);
 
 const img = new Image();
 
-const previewPre = ref<HTMLPreElement | null>(null);
 const previewFontSize = ref<number>(16);
 
 const onFileChange = (e: Event) => {
@@ -75,7 +100,9 @@ function RenderToASCII() {
 function RGBtoASCII(r: number, g: number, b: number): string {
   const gray = 0.2126 * r + 0.7152 * g + 0.0722 * b;
   const asciiIndex = Math.floor((gray * asciiArray.length) / 255);
-  return asciiArray[asciiIndex];
+  return negative.value
+    ? asciiArray[asciiArray.length - asciiIndex - 1]
+    : asciiArray[asciiIndex];
 }
 
 function UpdateWidth(width: number) {
@@ -84,68 +111,109 @@ function UpdateWidth(width: number) {
 }
 
 
-
-function UpdatePreviewFontSize(size: number) {
-  if (previewPre.value) {
-    previewPre.value.style.fontSize = `${size}px`;
-  }
-}
 </script>
 
 <template>
   <div class="h-screen flex flex-col items-center justify-start p-8">
-    <div class="bg-zinc-800 p-4 rounded-lg mb-2">
+    <div class="bg-zinc-800 p-4 rounded-lg mb-2 flex flex-col items-center">
       <h1
         class="font-extrabold text-transparent text-4xl bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600"
       >
-        Image to ASCII
+        ASCIIfier
       </h1>
+      <p class="text-white text-center opacity-60">
+        Convert your images to ASCII art with this simple tool.
+      </p>
     </div>
     <div
       class="flex flex-col items-center space-y-4 bg-zinc-800 p-4 rounded-lg"
+      v-if="!ascii"
     >
-      <input type="file" @change="onFileChange" class="p-2 rounded-lg" />
+      <ImageInput :onFileChange="onFileChange" />
     </div>
-    <div
-      class="flex flex-row w-full justify-center items-center space-x-4 mt-4"
-    >
+
+    <div v-if="ascii !== ''" class="w-full">
       <div
-        class="w-1/2 bg-zinc-800 p-4 rounded-lg h-[700px] flex items-center justify-center"
+        class="flex flex-row w-full justify-start items-start space-x-4 mt-4 relative"
       >
-        <img :src="img.src" alt="Image" class="rounded-lg w-auto h-full" />
-      </div>
-      <ASCIIViewer :asciiPreview="ascii" />
-    </div>
-    <div class="flex flex-col items-center justify-center">
-      <div class="flex flex-row items-center space-x-4 mt-4 w-full">
-        <label for="width" class="text-white text-center w-1/2">
-          Width: {{ asciiWidth }}
-        </label>
-        <input
-          type="range"
-          id="width"
-          min="50"
-          max="200"
-          step="1"
-          v-model="asciiWidth"
-          @input="UpdateWidth(asciiWidth)"
-          class="w-1/2"
-        />
-      </div>
-      <div class="flex flex-row items-center space-x-4 mt-4 w-full">
-        <label for="fontSize" class="text-white text-center w-1/2"
-          >Font Size: {{ previewFontSize }} px</label
+        <div
+          class="w-max bg-zinc-800 p-4 rounded-lg flex items-center justify-center flex-col absolute top-4 left-4 z-10"
         >
-        <input
-          type="range"
-          id="fontSize"
-          min="8"
-          max="32"
-          step="1"
-          v-model="previewFontSize"
-          @input="UpdatePreviewFontSize(previewFontSize)"
-          class="w-1/2"
-        />
+          <img :src="img.src" alt="Image" class="rounded-lg w-auto h-64 min-w-64" />
+          <div class="mt-4 flex flex-row items-center space-x-4">
+            <label
+              for="change-file"
+              class="bg-zinc-600 p-2 rounded-lg text-white hover:bg-zinc-500 cursor-pointer"
+            >
+              Change Image
+              <input
+                id="change-file"
+                type="file"
+                @change="onFileChange"
+                accept="image/svg+xml,image/png,image/jpeg"
+                class="hidden"
+              />
+            </label>
+          </div>
+        </div>
+        <ASCIIViewer :asciiPreview="ascii" :fontsize="previewFontSize" />
+      </div>
+      <div
+        class="flex flex-col items-center justify-center absolute bottom-4 right-4 p-4 bg-zinc-800 rounded-lg"
+      >
+        <div class="grid grid-cols-3 gap-4 w-full items-center">
+          <h2 class="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 text-center col-start-2 w-full">
+            Settings</h2>
+          <button
+            class="bg-zinc-600 p-2 group rounded-lg col-start-3 text-white w-max gap-2 h-9 flex items-center justify-center justify-self-end"
+            @click="ToClipboard"
+          >
+            <font-awesome-icon :icon="faCopy" />
+          </button>
+        </div>
+        <hr class="w-full border-zinc-600 my-2" />
+        <div class="flex flex-row items-center space-x-4 mt-4 w-full">
+          <label for="width" class="text-white text-center w-1/2">
+            Width: {{ asciiWidth }}
+          </label>
+          <input
+            type="range"
+            id="width"
+            min="50"
+            max="200"
+            step="1"
+            v-model="asciiWidth"
+            @input="UpdateWidth(asciiWidth)"
+            class="w-1/2"
+          />
+        </div>
+        <div class="flex flex-row items-center space-x-4 mt-4 w-full">
+          <label for="fontSize" class="text-white text-center w-1/2"
+            >Font Size: {{ previewFontSize }} px</label
+          >
+          <input
+            type="range"
+            id="fontSize"
+            min="8"
+            max="32"
+            step="1"
+            v-model="previewFontSize"
+            @input="RenderToASCII"
+            class="w-1/2"
+          />
+        </div>
+        <div class="flex flex-row items-center space-x-4 mt-4 w-full">
+          <label for="negative" class="text-white text-center w-1/2"
+            >Negative</label
+          >
+          <input
+            type="checkbox"
+            id="negative"
+            v-model="negative"
+            class="w-1/2"
+            @change="RenderToASCII"
+          />
+        </div>  
       </div>
     </div>
   </div>
