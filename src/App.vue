@@ -126,7 +126,7 @@ function UpdateWidth(width: number) {
       </p>
     </div>
     <div
-      class="flex flex-col items-center space-y-4 bg-zinc-800 p-4 rounded-lg"
+      class="flex flex-col items-center space-y-4 bg-zinc-800 md:w-max w-full p-4 rounded-lg"
       v-if="!ascii"
     >
       <ImageInput :onFileChange="onFileChange" />
@@ -134,10 +134,10 @@ function UpdateWidth(width: number) {
 
     <div v-if="ascii !== ''" class="w-full">
       <div
-        class="flex flex-row w-full justify-start items-start space-x-4 mt-4 relative"
+        class="flex flex-col md:flex-row w-full justify-start items-start gap-4 mt-4 relative"
       >
         <div
-          class="w-max bg-zinc-800 p-4 rounded-lg flex items-center justify-center flex-col absolute top-4 left-4 z-10"
+          class="w-full md:w-max bg-zinc-800 p-4 rounded-lg flex items-center justify-center flex-col md:absolute md:top-4 md:left-4 z-10"
         >
           <img :src="img.src" alt="Image" class="rounded-lg w-auto h-64 min-w-64" />
           <div class="mt-4 flex flex-row items-center space-x-4">
@@ -159,7 +159,7 @@ function UpdateWidth(width: number) {
         <ASCIIViewer :asciiPreview="ascii" :fontsize="previewFontSize" />
       </div>
       <div
-        class="flex flex-col items-center justify-center absolute bottom-4 right-4 p-4 bg-zinc-800 rounded-lg"
+        class="flex flex-col items-center justify-center md:absolute bottom-4 right-4 p-4 bg-zinc-800 rounded-lg mt-2 md:mt-0"
       >
         <div class="grid grid-cols-3 gap-4 w-full items-center">
           <h2 class="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 text-center col-start-2 w-full">
